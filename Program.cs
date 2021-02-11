@@ -7,6 +7,7 @@ using CsvHelper;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 
 namespace ProductsUploader
 {
@@ -15,9 +16,13 @@ namespace ProductsUploader
         const string bar = "------------------------------------------";
         public class Product
         {
+            [JsonPropertyName("id")]
             public string Id { get; set; }
+            [JsonPropertyName("sku")]
             public string sku { get; set; }
+            [JsonPropertyName("regular_price")]
             public string regular_price { get; set; }
+            [JsonPropertyName("stock_quantity")]
             public int stock_quantity { get; set; }
         }
 
@@ -37,7 +42,7 @@ namespace ProductsUploader
                 stock_quantity = product.stock_quantity
             };
 
-            string url = String.Format("https://alonsoinformatica.com.ar/wp-json/wc/v2/products/");
+            string url = String.Format("https://alonsoinformatica.com.ar/wp-json/wc/v3/products/");
 
             HttpMessageHandler handler = new HttpClientHandler()
             {
@@ -59,6 +64,31 @@ namespace ProductsUploader
             return int.Parse(product.Id);
         }
 
+        static async Task<Product> GetProductsAsync(string sku)
+        {
+
+            string url = String.Format("https://alonsoinformatica.com.ar/wp-json/wc/v3/products/");
+
+            HttpMessageHandler handler = new HttpClientHandler()
+            {
+            };
+
+            HttpClient client = new HttpClient(handler)
+            {
+                BaseAddress = new Uri(url),
+                Timeout = new TimeSpan(0, 2, 0)
+            };
+
+
+            var plainTextBytes = Encoding.UTF8.GetBytes("test:test");
+            string val = Convert.ToBase64String(plainTextBytes);
+            client.DefaultRequestHeaders.Add("Authorization", "Basic " + val);
+            string s = await client.GetStringAsync(url);
+            Product p = JsonConvert.DeserializeObject<Product>(s);
+
+            return p;
+        }
+
         static async Task Main(string[] args)
         {
             Header();
@@ -71,6 +101,7 @@ namespace ProductsUploader
                 Console.Write(filename+ "\n");
                 Console.Write("Press <Enter> to start... ");
                 while (Console.ReadKey().Key != ConsoleKey.Enter) { }
+
                 using (var fs = new StreamReader(filename))
                 {
                     // I just need this one line to load the records from the file in my List<CsvLine>
@@ -78,8 +109,11 @@ namespace ProductsUploader
                 }
                 foreach (var product in lines)
                 {
+                    var prod = await GetProductsAsync(product.sku);
+                    product.Id = prod.Id;
                     Console.WriteLine(await UpdateProductAsync(product));
                 }
+
                 Footer();
             }
             catch (Exception e)
