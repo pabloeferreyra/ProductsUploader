@@ -78,7 +78,8 @@ namespace ProductsUploader
             Header();
             try
             {
-                string path = Directory.GetCurrentDirectory();
+                //string path = Directory.GetCurrentDirectory();
+                string path = @"D:\Downloads";
                 string filename = path + @"\Alonso Informatica - CSV.csv";
                 Console.Write("Archivo a leer:\n");
                 Console.Write(filename+ "\n");
@@ -115,13 +116,9 @@ namespace ProductsUploader
 
                                     Console.WriteLine(await UpdateProductAsync(productFinished, val, url));
                                 }
-                                break;
                             }
                             catch (Exception e)
                             {
-                                Console.WriteLine(e);
-                                Console.Write("Press <Enter> to continue... ");
-                                while (Console.ReadKey().Key != ConsoleKey.Enter) { }
                                 break;
                             }
                         }
