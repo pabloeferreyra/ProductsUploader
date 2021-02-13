@@ -5,10 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using CsvHelper;
 using System.IO;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json.Serialization;
-using CsvHelper.Configuration;
 using System.Globalization;
 
 namespace ProductsUploader
