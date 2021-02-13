@@ -106,7 +106,7 @@ namespace ProductsUploader
                                 Console.WriteLine("id Producto " + value);
                                 Product productFinished = new Product
                                 {
-                                    Id = prod.Id,
+                                    Id = value.ToString(),
                                     regular_price = records.PRECIO,
                                     sku = records.SKU,
                                     stock_quantity = records.STOCK
