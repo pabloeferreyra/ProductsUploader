@@ -78,8 +78,8 @@ namespace ProductsUploader
             Header();
             try
             {
-                //string path = Directory.GetCurrentDirectory();
-                string path = @"D:\Downloads";
+                string path = Directory.GetCurrentDirectory();
+                //string path = @"D:\Downloads";
                 string filename = path + @"\Alonso Informatica - CSV.csv";
                 Console.Write("Archivo a leer:\n");
                 Console.Write(filename+ "\n");
@@ -124,8 +124,8 @@ namespace ProductsUploader
                         }
                     }
                 }
-                
 
+                System.Diagnostics.Process.Start("http://www.c-sharpcorner.com/Default.aspx");
                 Footer();
             }
             catch (Exception e)
