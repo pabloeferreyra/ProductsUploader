@@ -97,25 +97,32 @@ namespace ProductsUploader
                         {
                             try
                             {
+                                
                                 var records = csvReader.GetRecord<ProductOne>();
-                                var prod = await GetProductsAsync(records.SKU, val, url);
-                                var value = ((Newtonsoft.Json.Linq.JValue)((Newtonsoft.Json.Linq.JContainer)((Newtonsoft.Json.Linq.JContainer)((Newtonsoft.Json.Linq.JContainer)prod).First).First).First).Value;
-                                Console.WriteLine("id Producto " + value);
-                                Product productFinished = new Product
+                                if (records.SKU != "")
                                 {
-                                    Id = value.ToString(),
-                                    regular_price = records.PRECIO,
-                                    sku = records.SKU,
-                                    stock_quantity = records.STOCK
-                                };
+                                    var prod = await GetProductsAsync(records.SKU, val, url);
+                                    var value = ((Newtonsoft.Json.Linq.JValue)((Newtonsoft.Json.Linq.JContainer)((Newtonsoft.Json.Linq.JContainer)((Newtonsoft.Json.Linq.JContainer)prod).First).First).First).Value;
+                                    Console.WriteLine("id Producto " + value);
 
-                                Console.WriteLine(await UpdateProductAsync(productFinished, val, url));
+                                    Product productFinished = new Product
+                                    {
+                                        Id = value.ToString(),
+                                        regular_price = records.PRECIO,
+                                        sku = records.SKU,
+                                        stock_quantity = records.STOCK
+                                    };
+
+                                    Console.WriteLine(await UpdateProductAsync(productFinished, val, url));
+                                }
+                                break;
                             }
                             catch (Exception e)
                             {
                                 Console.WriteLine(e);
                                 Console.Write("Press <Enter> to continue... ");
                                 while (Console.ReadKey().Key != ConsoleKey.Enter) { }
+                                break;
                             }
                         }
                     }
