@@ -8,6 +8,8 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
+using CsvHelper.Configuration;
+using System.Globalization;
 
 namespace ProductsUploader
 {
@@ -28,22 +30,13 @@ namespace ProductsUploader
 
         public class ProductOne
         {
-            public string sku { get; set; }
-            public string regular_price { get; set; }
-            public int stock_quantity { get; set; }
+            public string SKU { get; set; }
+            public int STOCK { get; set; }
+            public string PRECIO { get; set; }
         }
 
-        static async Task<int> UpdateProductAsync(Product product)
-        {
-            ProductOne p = new ProductOne
+            static async Task<int> UpdateProductAsync(Product product, string val, string url)
             {
-                sku = product.sku,
-                regular_price = product.regular_price,
-                stock_quantity = product.stock_quantity
-            };
-
-            string url = String.Format("https://alonsoinformatica.com.ar/wp-json/wc/v3/products/");
-
             HttpMessageHandler handler = new HttpClientHandler()
             {
             };
@@ -54,20 +47,17 @@ namespace ProductsUploader
                 Timeout = new TimeSpan(0, 2, 0)
             };
 
-
-            var plainTextBytes = Encoding.UTF8.GetBytes("test:test");
-            string val = Convert.ToBase64String(plainTextBytes);
             client.DefaultRequestHeaders.Add("Authorization", "Basic " + val);
-            StringContent content = new StringContent(JsonConvert.SerializeObject(p), Encoding.UTF8, "application/json");
+            StringContent content = new StringContent(JsonConvert.SerializeObject(product), Encoding.UTF8, "application/json");
             await client.PostAsync(url + product.Id, content);
             
             return int.Parse(product.Id);
         }
 
-        static async Task<Product> GetProductsAsync(string sku)
+        static async Task<dynamic> GetProductsAsync(string sku, string val, string url)
         {
 
-            string url = String.Format("https://alonsoinformatica.com.ar/wp-json/wc/v3/products/");
+            
 
             HttpMessageHandler handler = new HttpClientHandler()
             {
@@ -79,12 +69,9 @@ namespace ProductsUploader
                 Timeout = new TimeSpan(0, 2, 0)
             };
 
-
-            var plainTextBytes = Encoding.UTF8.GetBytes("test:test");
-            string val = Convert.ToBase64String(plainTextBytes);
             client.DefaultRequestHeaders.Add("Authorization", "Basic " + val);
-            string s = await client.GetStringAsync(url);
-            Product p = JsonConvert.DeserializeObject<Product>(s);
+            string s = await client.GetStringAsync(url+ "?sku="+sku);
+            var p = JsonConvert.DeserializeObject<dynamic>(s);
 
             return p;
         }
@@ -92,7 +79,6 @@ namespace ProductsUploader
         static async Task Main(string[] args)
         {
             Header();
-            List<Product> lines = new List<Product>();
             try
             {
                 string path = Directory.GetCurrentDirectory();
@@ -101,18 +87,43 @@ namespace ProductsUploader
                 Console.Write(filename+ "\n");
                 Console.Write("Press <Enter> to start... ");
                 while (Console.ReadKey().Key != ConsoleKey.Enter) { }
-
+                string url = String.Format("https://alonsoinformatica.com.ar/wp-json/wc/v3/products/");
+                var plainTextBytes = Encoding.UTF8.GetBytes("test:test");
+                string val = Convert.ToBase64String(plainTextBytes);
+                using (var stream = new MemoryStream())
                 using (var fs = new StreamReader(filename))
                 {
                     // I just need this one line to load the records from the file in my List<CsvLine>
-                    lines = new CsvReader((IParser)fs).GetRecords<Product>().ToList();
+                    using (var csvReader = new CsvReader(fs, CultureInfo.InvariantCulture))
+                    {
+                        while (csvReader.Read())
+                        {
+                            try
+                            {
+                                var records = csvReader.GetRecord<ProductOne>();
+                                var prod = await GetProductsAsync(records.SKU, val, url);
+                                var value = ((Newtonsoft.Json.Linq.JValue)((Newtonsoft.Json.Linq.JContainer)((Newtonsoft.Json.Linq.JContainer)((Newtonsoft.Json.Linq.JContainer)prod).First).First).First).Value;
+                                Console.WriteLine("id Producto " + value);
+                                Product productFinished = new Product
+                                {
+                                    Id = prod.Id,
+                                    regular_price = records.PRECIO,
+                                    sku = records.SKU,
+                                    stock_quantity = records.STOCK
+                                };
+
+                                Console.WriteLine(await UpdateProductAsync(productFinished, val, url));
+                            }
+                            catch (Exception e)
+                            {
+                                Console.WriteLine(e);
+                                Console.Write("Press <Enter> to continue... ");
+                                while (Console.ReadKey().Key != ConsoleKey.Enter) { }
+                            }
+                        }
+                    }
                 }
-                foreach (var product in lines)
-                {
-                    var prod = await GetProductsAsync(product.sku);
-                    product.Id = prod.Id;
-                    Console.WriteLine(await UpdateProductAsync(product));
-                }
+                
 
                 Footer();
             }
